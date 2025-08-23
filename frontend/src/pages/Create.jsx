@@ -40,10 +40,9 @@ const Create = () => {
   const categories = [
     { value: 'general', label: 'General' },
     { value: 'education', label: 'Education' },
-    { value: 'entertainment', label: 'Entertainment' },
-    { value: 'gaming', label: 'Gaming' },
     { value: 'music', label: 'Music' },
-    { value: 'technology', label: 'Technology' }
+    { value: 'technology', label: 'Technology' },
+    { value: 'others', label: 'Others' }
   ];
 
   // Function to format seconds to MM:SS format

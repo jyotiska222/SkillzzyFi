@@ -8,7 +8,7 @@ import { Loader } from 'lucide-react';
 import { Coins } from 'lucide-react';
 
 const Explore = () => {
-  const [activeFilter, setActiveFilter] = useState('General');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -55,18 +55,19 @@ const Explore = () => {
 
   // Updated categories with proper filtering logic
   const categories = [
-    { id: 'General', name: 'General', icon: <FiTrendingUp /> },
-    { id: 'Education', name: 'Education', icon: <FiTrendingUp /> },
-    { id: 'Entertainment', name: 'Entertainment', icon: <FiTrendingUp /> },
-    { id: 'Gaming', name: 'Gaming', icon: <FiTrendingUp /> },
-    { id: 'Music', name: 'Music', icon: <FiTrendingUp /> },
-    { id: 'Technology', name: 'Technology', icon: <FiTrendingUp /> }
+    { id: 'all', name: 'All Categories', icon: <FiTrendingUp /> },
+    { id: 'general', name: 'General', icon: <FiTrendingUp /> },
+    { id: 'education', name: 'Education', icon: <FiTrendingUp /> },
+    { id: 'music', name: 'Music', icon: <FiTrendingUp /> },
+    { id: 'technology', name: 'Technology', icon: <FiTrendingUp /> },
+    { id: 'others', name: 'Others', icon: <FiTrendingUp /> }
   ];
 
   // Fixed filtering logic
   const filteredVideos = videos.filter(video => {
-    // Category filtering - General shows all videos
-    const matchesCategory = activeFilter === 'General' || video.category === activeFilter;
+    // Category filtering - 'all' shows all videos, otherwise match category (case-insensitive)
+    const matchesCategory = activeFilter === 'all' || 
+                           video.category?.toLowerCase() === activeFilter.toLowerCase();
     
     // Search filtering - check title, channel, and category
     const searchLower = searchQuery.toLowerCase();
@@ -101,6 +102,18 @@ const Explore = () => {
     } catch (error) {
       console.error("Purchase failed:", error);
       alert("Purchase failed. Please try again.");
+    }
+    setShowModal(false);
+  };
+
+  const handleExchange = async(id) => {
+    try {
+      // Add your exchange logic here
+      console.log("Exchange initiated for content:", id);
+      alert("Exchange feature will be implemented soon!");
+    } catch (error) {
+      console.error("Exchange failed:", error);
+      alert("Exchange failed. Please try again.");
     }
     setShowModal(false);
   };
@@ -254,7 +267,7 @@ const Explore = () => {
               )}
               <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg">
                 <FiFilter />
-                <span className="text-sm">Filters Active: {activeFilter}</span>
+                <span className="text-sm">Filters Active: {categories.find(cat => cat.id === activeFilter)?.name || 'All'}</span>
               </div>
             </div>
           </div>
@@ -280,8 +293,8 @@ const Explore = () => {
           {/* Results counter */}
           <div className="mb-4">
             <p className="text-gray-400 text-sm">
-              {searchQuery || activeFilter !== 'General' 
-                ? `Showing ${filteredVideos.length} result${filteredVideos.length !== 1 ? 's' : ''} ${searchQuery ? `for "${searchQuery}"` : ''} ${activeFilter !== 'General' ? `in ${activeFilter}` : ''}`
+              {searchQuery || activeFilter !== 'all' 
+                ? `Showing ${filteredVideos.length} result${filteredVideos.length !== 1 ? 's' : ''} ${searchQuery ? `for "${searchQuery}"` : ''} ${activeFilter !== 'all' ? `in ${categories.find(cat => cat.id === activeFilter)?.name}` : ''}`
                 : `${filteredVideos.length} videos available`
               }
             </p>
@@ -420,10 +433,10 @@ const Explore = () => {
                         
                         <div className="relative group">
                           <button 
-                            onClick={() => handleBuyNow(selectedVideo.id)}
+                            onClick={() => handleExchange(selectedVideo.id)}
                             className="flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                           >
-                            <i className="ri-exchange-line text-lg"></i>
+                            <CgArrowsExchange className="text-lg" />
                             Exchange
                           </button>
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block w-48 bg-white text-black text-xs rounded-md py-2 px-3 shadow-lg z-10">
@@ -449,14 +462,14 @@ const Explore = () => {
               <p className="text-gray-400 max-w-md">
                 {searchQuery 
                   ? `No results found for "${searchQuery}". Try different keywords or categories.`
-                  : `No videos found in ${activeFilter}. Try selecting a different category.`
+                  : `No videos found in ${categories.find(cat => cat.id === activeFilter)?.name}. Try selecting a different category.`
                 }
               </p>
-              {(searchQuery || activeFilter !== 'General') && (
+              {(searchQuery || activeFilter !== 'all') && (
                 <button 
                   onClick={() => {
                     setSearchQuery('');
-                    setActiveFilter('General');
+                    setActiveFilter('all');
                   }}
                   className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 >

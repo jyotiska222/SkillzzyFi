@@ -181,7 +181,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-6">
+    <div className=" min-h-screen bg-gray-900 text-gray-100 p-6">
       <div className="pr-96">
         <div className="w-full">
           {/* Header */}

@@ -2,6 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FaUsers, FaLightbulb, FaHandsHelping } from "react-icons/fa";
 import Hero from "./Hero";
+import { Link } from "react-router-dom";
+import FeaturedVideos from "./FeaturedVideos";
 
 const Home = () => {
   return (
@@ -72,8 +74,11 @@ const Home = () => {
         </div>
       </section>
 
+      {/* explore video */}
+      <FeaturedVideos />
+
       {/* Call to Action */}
-      <section className="py-24 bg-gradient-to-r from-slate-900 to-blue-950 text-center text-white relative z-10">
+      <section className="pt-16 pb-20 bg-gradient-to-r from-slate-900 to-blue-950 text-center text-white relative z-10">
         <motion.h2
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -97,7 +102,7 @@ const Home = () => {
           whileTap={{ scale: 0.95 }}
           className="btn bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full px-8 py-3 shadow-lg"
         >
-          Join Now
+          <Link to="/create">Upload Now</Link>
         </motion.button>
       </section>
 

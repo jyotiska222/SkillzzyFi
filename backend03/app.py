@@ -225,6 +225,21 @@ def process_ipfs_video():
             # Add success flag
             analysis_result["success"] = True
             
+            # Print the analysis results in terminal
+            print("\n=== Analysis Results ===")
+            print(f"Statistics:")
+            print(f"Total Topics: {analysis_result['statistics']['totalTopics']}")
+            print(f"Topics Found: {analysis_result['statistics']['topicsFound']}")
+            print(f"Topics Missing: {analysis_result['statistics']['topicsMissing']}")
+            print(f"Coverage: {analysis_result['statistics']['coverage']}%")
+            print("\nDetailed Analysis:")
+            for detail in analysis_result['details']:
+                print(f"\nTopic: {detail['topic']}")
+                print(f"Status: {detail['status']}")
+                print(f"Confidence: {detail['confidence']}%")
+                print(f"Explanation: {detail['explanation']}")
+            print("=====================\n")
+            
             logger.info("Video processing completed successfully")
             return jsonify(analysis_result)
             

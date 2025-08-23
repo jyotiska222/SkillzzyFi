@@ -56,7 +56,7 @@ const Forum = ({ currentUser = "User123" }) => {
               Community <span className="text-emerald-400">Forum</span>
             </h1>
           </div>
-          <p className="text-gray-300 text-lg mb-6">Share knowledge, ask questions, and connect with fellow learners</p>
+          <p className="text-gray-300 text-lg mb-6">Share what you Need</p>
           
          
           <div className="inline-flex items-center gap-2 bg-gradient-to-b from-gray-800 to-gray-900 border border-emerald-500/20 rounded-2xl px-6 py-3">
@@ -76,7 +76,7 @@ const Forum = ({ currentUser = "User123" }) => {
         >
           <div className="max-w-2xl mx-auto">
             <div className="bg-gradient-to-b from-gray-800 to-gray-900 border border-emerald-500/20 hover:border-emerald-400/40 rounded-2xl p-6 shadow-xl transition-all">
-              <h3 className="text-xl font-semibold text-white mb-4">Share Your Knowledge</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">Your Needs ?? </h3>
               <div className="relative">
                 <textarea
                   value={newPost}

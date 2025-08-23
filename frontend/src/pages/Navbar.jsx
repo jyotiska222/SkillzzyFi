@@ -235,7 +235,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useWallet } from "../contexts/walletContext";
-import { Coins, X, Menu } from "lucide-react";
+import { Coins, X, Menu, Wallet, LogOut, User } from "lucide-react";
 import { IoIosNotifications } from "react-icons/io";
 import Noti from "./Noti"; 
 import icon from '../assets/icon.png';
@@ -332,11 +332,14 @@ useEffect(() => {
     <>
       <nav className="bg-gradient-to-r from-blue-800 via-indigo-900 to-purple-800 shadow-lg px-6 py-4 flex justify-between items-center relative z-50">
         {/* Logo */}
-        <div className="text-3xl md:text-4xl font-extrabold tracking-wide cursor-pointer 
-          bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-500 
-          bg-clip-text text-transparent 
-          transition-transform duration-300 hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">
-          <Link to="/">Skillzzy<span className="text-yellow-400 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]">Fi</span></Link>
+        <div className="flex items-center space-x-2 cursor-pointer 
+          transition-transform duration-300 hover:scale-110">
+          <img src={icon} alt="SkillzzyFi" className="h-10 w-10" />
+          <Link to="/" className="flex items-center">
+            <span className="text-3xl md:text-4xl font-bold font-['JetBrains Mono'] tracking-tight text-white">
+              Skillzzy<span className="text-yellow-300 drop-shadow-[0_0_5px_rgba(252,211,77,0.6)]">Fi</span>
+            </span>
+          </Link>
         </div>
 
         {/* Desktop Menu */}
@@ -355,13 +358,24 @@ useEffect(() => {
             </span>
           </div>
 
-          <button onClick={handleWalletClick} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full shadow-md px-4 py-2 transition-transform transform hover:scale-105">
-            {isConnected ? formatAccount(account) : "Connect Wallet"}
+          <button onClick={handleWalletClick} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full shadow-md px-4 py-2 transition-transform transform hover:scale-105 flex items-center space-x-2">
+            {isConnected ? (
+              <>
+                <LogOut size={18} />
+                <span>{formatAccount(account)}</span>
+              </>
+            ) : (
+              <>
+                <Wallet size={18} />
+                <span>Connect Wallet</span>
+              </>
+            )}
           </button>
 
           <Link to="/profile">
-            <button className="rounded-full bg-white text-purple-700 hover:bg-purple-200 px-4 py-2 shadow-lg transition-transform transform hover:scale-105">
-              Profile
+            <button className="rounded-full bg-white text-purple-700 hover:bg-purple-200 px-4 py-2 shadow-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
+              <User size={18} />
+              <span>Profile</span>
             </button>
           </Link>
 
@@ -400,13 +414,24 @@ useEffect(() => {
             <span className="ml-1.5 text-sm font-medium text-yellow-900">{balance.toLocaleString()} pts</span>
           </div>
 
-          <button onClick={handleWalletClick} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full shadow-md px-4 py-2">
-            {isConnected ? formatAccount(account) : "Connect Wallet"}
+          <button onClick={handleWalletClick} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full shadow-md px-4 py-2 flex items-center space-x-2 justify-center w-full">
+            {isConnected ? (
+              <>
+                <LogOut size={18} />
+                <span>{formatAccount(account)}</span>
+              </>
+            ) : (
+              <>
+                <Wallet size={18} />
+                <span>Connect Wallet</span>
+              </>
+            )}
           </button>
 
           <Link to="/profile" onClick={toggleMobileMenu}>
-            <button className="rounded-full bg-white text-purple-700 hover:bg-purple-200 px-4 py-2 shadow-lg">
-              Profile
+            <button className="rounded-full bg-white text-purple-700 hover:bg-purple-200 px-4 py-2 shadow-lg w-full flex items-center space-x-2 justify-center">
+              <User size={18} />
+              <span>Profile</span>
             </button>
           </Link>
 

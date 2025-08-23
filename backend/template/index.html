@@ -1,0 +1,90 @@
+<!-- backend/templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Course Point | SkillBarter</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 720px; margin: 40px auto; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 20px; }
+    .row { margin-bottom: 14px; }
+    #result { margin-top: 20px; padding: 16px; border: 1px solid #ddd; border-radius: 8px; display: none; }
+    #spinner { display: none; }
+  </style>
+</head>
+<body>
+  <h2>Course Point of SkillBarter</h2>
+  <div class="card">
+    <div class="row">
+      <label>Video Title</label><br/>
+      <input type="text" id="title" placeholder="e.g., Intro to Web3 Insurance" required style="width:100%;">
+    </div>
+    <div class="row">
+      <label>Video Description</label><br/>
+      <textarea id="description" rows="4" placeholder="Short course summary..." required style="width:100%;"></textarea>
+    </div>
+    <div class="row">
+      <label>Upload Video (mp4)</label><br/>
+      <input type="file" id="video" accept="video/mp4" required>
+      <div id="meta"></div>
+      <video id="probe" style="display:none;" controls></video>
+    </div>
+    <button id="submitBtn">Upload</button>
+    <span id="spinner">Uploading & assigning default point</span>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const videoInput = document.getElementById('video');
+    const probe = document.getElementById('probe');
+    const meta = document.getElementById('meta');
+    let durationMinutes = null;
+
+    videoInput.addEventListener('change', () => {
+      const file = videoInput.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      probe.src = url;
+      probe.addEventListener('loadedmetadata', () => {
+        durationMinutes = Math.ceil(probe.duration / 60);
+        meta.textContent = `Detected duration: ~${durationMinutes} minute(s)`;
+        URL.revokeObjectURL(url);
+      }, { once: true });
+    });
+
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+      const title = document.getElementById('title').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const file = videoInput.files[0];
+      if (!title || !description || !file) { alert('Please fill all fields and select a video.'); return; }
+
+      const form = new FormData();
+      form.append('title', title);
+      form.append('description', description);
+      form.append('duration_minutes', durationMinutes ?? '');
+      form.append('video', file);
+
+      document.getElementById('spinner').style.display = 'inline';
+
+      try {
+        const res = await fetch('/api/score', { method: 'POST', body: form });
+        const data = await res.json();
+        const result = document.getElementById('result');
+        result.style.display = 'block';
+        if (data.error) {
+          result.innerHTML = `<b>Error:</b> ${data.error}<br/><pre>${(data.raw||'').toString().slice(0,1000)}</pre>`;
+        } else {
+          result.innerHTML = `<h3>Default Score: ${data.score}/50</h3><p>${data.explanation}</p>`;
+        }
+      } catch (e) {
+        const result = document.getElementById('result');
+        result.style.display = 'block';
+        result.textContent = 'Unexpected error: ' + e.message;
+      } finally {
+        document.getElementById('spinner').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

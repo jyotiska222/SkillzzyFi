@@ -286,7 +286,7 @@ const Create = () => {
       if (!response.ok) {
         throw new Error('Failed to score video');
       }
-
+       console.log("Scoring response received")
       const result = await response.json();
       setScoringResult(result);
       setUploadStatus(`Video scored: ${result.score} points!`);

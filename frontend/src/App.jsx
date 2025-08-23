@@ -5,7 +5,7 @@ import Profile from './pages/Profile';
 import About from './pages/About';
 import Hero from './pages/Hero';
 import Navbar from './pages/Navbar';
-import Services from './pages/Services';
+// import Services from './pages/Services';
 import Create from './pages/Create';
 import Wallet from './pages/Wallet';
 import Explore from './pages/Explore';
@@ -29,7 +29,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/create" element={<Create />} />
-        <Route path="/services" element={<Services />} />
+        {/* <Route path="/services" element={<Services />} /> */}
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/hero" element={<Hero />} />

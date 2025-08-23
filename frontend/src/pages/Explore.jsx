@@ -18,21 +18,42 @@ const Explore = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { contract } = useWallet();
   const [videos, setVideos] = useState([]);
+  const [accessMap,setAccessMap] = useState({})
+
 
   useEffect(() => {
-    const getVideos = async () => {
-      if (contract) {
-        try {
-          const newVideos = await contract.getAllContents();
-          setVideos(newVideos);
-        } catch (error) {
-          console.error("Error fetching videos:", error);
+  const getVideos = async () => {
+    if (contract) {
+      try {
+        const newVideos = await contract.getAllContents();
+        setVideos(newVideos);
+
+        const accessData = {};
+        for (let i = 0; i < newVideos.length; i++) {
+          try {
+            const hasAccess = await contract.hasAccess(i);
+            accessData[i] = hasAccess;
+          } catch (error) {
+            console.error(`Error checking access for content ${i}:`, error);
+            accessData[i] = false;
+          }
         }
+
+        setAccessMap(accessData);
+        console.log("calculated accessData:", accessData);
+      } catch (error) {
+        console.error("Error fetching videos:", error);
       }
-    };
-    
-    getVideos();
-  }, [contract]);
+    }
+  };
+
+  getVideos();
+}, [contract]);
+
+useEffect(() => {
+  console.log("accessMap updated:", accessMap);
+}, [accessMap]);
+
 
   const categories = [
     { id: 'all', name: 'All', icon: <FiTrendingUp /> },
@@ -64,9 +85,16 @@ const Explore = () => {
     }
   };
 
-  const handleBuyNow = () => {
-    console.log("Buy now clicked for:", selectedVideo);
-    alert("Purchase functionality would be implemented here");
+  const handleBuyNow = async(id) => {
+    // console.log("Buy now clicked for:", selectedVideo);
+    // alert("Purchase functionality would be implemented here");
+    try {
+      const tx = await contract.purchaseContent(id)
+      tx.wait();
+      console.alert("Purchased successfully , you may have to refresh your page")
+    } catch (error) {
+      
+    }
     setShowModal(false);
   };
 
@@ -329,21 +357,22 @@ const Explore = () => {
                   <div className="flex justify-end gap-2">
                     <button 
                       onClick={handleOpenVideo}
-                      className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
-                    >
-                      <i className="ri-play-fill text-lg"></i>
-                      Open Video
-                    </button>
-                    <button 
-                      onClick={handleOpenVideo}
                       className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                     >
                       <i className="ri-play-fill text-lg"></i>
                       <Coins className="h-4 w-4 text-Red-600" />
                       {selectedVideo?.currentPrice || 10}
                     </button>
+                    {accessMap[selectedVideo.id]?<button 
+                      onClick={handleOpenVideo}
+                      className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
+                    >
+                      <i className="ri-play-fill text-lg"></i>
+                      Open Video
+                    </button>:
+                    <>
                     <button 
-                      onClick={handleBuyNow}
+                      onClick={(e)=>handleBuyNow(selectedVideo.id)}
                       className="flex items-center justify-center gap-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                     >
                       <i className="ri-heart-line text-lg"></i>
@@ -362,7 +391,7 @@ const Explore = () => {
                         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 w-3 h-3 rotate-45 bg-white"></div>
                         Exchange your skill with anyone
                       </div>
-                    </div>
+                    </div></>}
                   </div>
                 </div>
               </div>

@@ -359,7 +359,7 @@ const Create = () => {
                 }
               </span>
             </div>
-            <input
+            {/* <input
               type="number"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
@@ -367,10 +367,10 @@ const Create = () => {
               placeholder="Override"
               min="1"
               title="Override auto-detected duration (in minutes)"
-            />
+            /> */}
           </div>
           <p className="mt-1 text-xs text-blue-600">
-            Duration is auto-detected when you upload a video. You can override if needed.
+            Duration is auto-detected when you upload a video.
           </p>
         </div>
         
@@ -524,24 +524,24 @@ const Create = () => {
                       {scoringResult.score}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-green-800">Default Points Preview</h4>
-                      <p className="text-sm text-green-600">Score: {scoringResult.score} out of 100</p>
+                      {/* <h4 className="font-semibold text-green-800">Default Points Preview</h4> */}
+                      <p className="text-lg text-green-600">Your Video Points: {scoringResult.score} </p>
                     </div>
                   </div>
-                  <div className="mb-3">
+                  {/* <div className="mb-3">
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div 
                         className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-300" 
                         style={{ width: `${(scoringResult.score / 50) * 100}%` }}
                       ></div>
                     </div>
-                  </div>
+                  </div> */}
                   <div className="bg-green-50 p-3 rounded-lg">
                     <h5 className="font-medium text-green-800 mb-1">AI Analysis:</h5>
                     <p className="text-sm text-green-700">{scoringResult.explanation}</p>
                   </div>
                   {scoringResult.duration && (
-                    <p className="text-xs text-gray-600 mt-2">Duration analyzed: {scoringResult.duration} minutes</p>
+                    <p className="text-sm text-gray-600 mt-2">Duration analyzed: {scoringResult.duration} minutes</p>
                   )}
                 </div>
               )}

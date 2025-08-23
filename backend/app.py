@@ -1,5 +1,3 @@
-# app.py
-
 import os
 import time
 import json
@@ -7,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
-import google.generativeai as genai  # Fixed import
+import google.generativeai as genai
 from flask_cors import CORS
 
 # Create Flask app only once
@@ -28,7 +26,7 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 # --- config ---
 load_dotenv()
 API_KEY = os.getenv("GOOGLE_API_KEY")
-MODEL_NAME = "gemini-1.5-flash"  # Updated model name
+MODEL_NAME = "gemini-2.5-flash"  # Use available model
 ALLOWED_EXTS = {"mp4", "mov", "m4v", "webm"}
 
 # Configure the API key
@@ -79,14 +77,14 @@ def score():
 
     try:
         # 1. Upload video to Files API
-        uploaded = genai.upload_file(path=str(path))
+        uploaded = genai.upload_file(str(path))
 
         # 2. Wait for the video to be ACTIVE (not PROCESSING)
         uploaded = wait_until_active(uploaded)
 
         # 3. Building the prompt
         text_prompt = f"""
-You are an evaluator that assigns default points (5–100) to an online course video.
+You are an evaluator that assigns default points (0–50) to an online course video.
 
 Scoring rubric (combine these signals):
 1) Video length (rough guide; use your judgement):
@@ -95,19 +93,23 @@ Scoring rubric (combine these signals):
    - 20–60 min → higher
    - >60 min → highest
 2) Metadata completeness & clarity:
-   - Title quality (clear, descriptive, professional)
+   - Title quality (clear, descriptive, professional, accuracy)
    - Description detail (learning outcomes, topics)
 3) Content quality from the video:
    - Relevance, clarity, structure, and depth
 
-4) Additional metrics to evaluate:
+4) Key metrics to evaluate:
+   - If the video title is clickbait, mismatched, gibberish titles → penalize (to 0 - 8)
+   - penalize unrelated thumbnails (−5)
+
+
+5) Additional metrics to evaluate:
     - includes table of contents in description (+3)
-    - penalize clickbait titles (−3)
     - duration sweet spot 12–25 minutes (+4)   
 
 Rules:
 - Output MUST be JSON with keys "score" (integer), "explanation" (string), and "duration" (integer).
-- The score MUST be within 5–100.
+- The score MUST be within 0–50.
 - Consider the provided duration if available; otherwise infer from video content.
 - Be brief but clear in the explanation.
 
@@ -116,40 +118,47 @@ Course metadata:
 - Description: {description}
 - Duration (minutes, if provided by client or inferred from video content): {duration_minutes or "unknown"}
 
-Please respond only with valid JSON format.
+Please respond in valid JSON format only.
 """
 
-        # 4. Call Gemini with the video file + prompt
+        # 4) Create the model and generate content
         model = genai.GenerativeModel(MODEL_NAME)
+        
+        # 5) Call Gemini with the video file + prompt
         response = model.generate_content([uploaded, text_prompt])
 
-        # 5. Parse response - try to extract JSON from the response
+        # 6) Parse the response text as JSON
         try:
-            # Sometimes the response might have markdown formatting, so clean it
+            # Clean the response text to extract JSON
             response_text = response.text.strip()
+            
+            # Remove code block markers if present
             if response_text.startswith("```json"):
-                response_text = response_text[7:-3].strip()
-            elif response_text.startswith("```"):
-                response_text = response_text[3:-3].strip()
+                response_text = response_text[7:]
+            if response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
             
             data = json.loads(response_text)
         except json.JSONDecodeError:
-            # Fallback if JSON parsing fails
-            data = {
-                "score": 50,
-                "explanation": "Could not parse AI response properly. Default score assigned.",
-                "duration": duration_minutes if duration_minutes.isdigit() else "unknown"
-            }
+            # Fallback: try to extract JSON from response
+            import re
+            json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group())
+            else:
+                raise ValueError("Could not parse JSON response from AI")
 
-        # 6. Clamp score to [5, 100]
-        raw_score = int(data.get("score", 50))
-        score = max(5, min(100, raw_score))
+        # 7) Parse & clamp score to [5, 50]
+        raw_score = int(data.get("score", 0))
+        score = max(5, min(50, raw_score))
         explanation = data.get("explanation", "No explanation.")
-        duration_result = duration_minutes if duration_minutes.isdigit() else data.get("duration", "unknown")
+        duration_minutes_val = int(duration_minutes) if duration_minutes.isdigit() else data.get("duration", "unknown")
         
-        print(f"AI Response: {data}")
+        print(f"data: {data}")
         
-        response = jsonify({"score": score, "explanation": explanation, "duration": duration_result})
+        response = jsonify({"score": score, "explanation": explanation, "duration": duration_minutes_val})
         response.headers.add("Access-Control-Allow-Origin", "http://localhost:5173")
         return response
 

@@ -1,4 +1,5 @@
-// Explore.js
+
+// explore page
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiClock, FiTrendingUp, FiHeart, FiShare2, FiMoreVertical, FiX, FiLoader } from 'react-icons/fi';
 import { BsPlayFill, BsDot } from 'react-icons/bs';
@@ -19,6 +20,22 @@ const Explore = () => {
   const { contract } = useWallet();
   const [videos, setVideos] = useState([]);
   const [accessMap, setAccessMap] = useState({});
+  
+  // New state for exchange functionality
+  const [showExchangeModal, setShowExchangeModal] = useState(false);
+  const [exchangeSkills, setExchangeSkills] = useState([]);
+  const [selectedSkill, setSelectedSkill] = useState(null);
+
+  // sample skills for exchang
+  const sampleSkills = [
+    { id: 1, name: "Web Development", level: "Advanced" },
+    { id: 2, name: "Graphics Design", level: "Intermediate" },
+    { id: 3, name: "Video Editing", level: "Beginner" },
+    { id: 4, name: "Content Writing", level: "Advanced" },
+    { id: 5, name: "Digital Marketing", level: "Intermediate" },
+    { id: 6, name: "UI/UX Design", level: "Advanced" },
+    { id: 7, name: "Data Analysis", level: "Intermediate" },
+  ];
 
   useEffect(() => {
     const getVideos = async () => {
@@ -52,6 +69,12 @@ const Explore = () => {
   useEffect(() => {
     console.log("accessMap updated:", accessMap);
   }, [accessMap]);
+
+  // Initialize exchange skills (replace with your actual skills data)
+  useEffect(() => {
+    // This would typically come from user profile or database
+    setExchangeSkills(sampleSkills);
+  }, []);
 
   // Updated categories with proper filtering logic
   const categories = [
@@ -108,14 +131,36 @@ const Explore = () => {
 
   const handleExchange = async(id) => {
     try {
-      // Add your exchange logic here
-      console.log("Exchange initiated for content:", id);
-      alert("Exchange feature will be implemented soon!");
+      // Show the exchange modal instead of immediate action
+      setShowExchangeModal(true);
     } catch (error) {
       console.error("Exchange failed:", error);
       alert("Exchange failed. Please try again.");
     }
-    setShowModal(false);
+  };
+
+  const handleSkillSelection = (skill) => {
+    setSelectedSkill(skill);
+  };
+
+  const confirmExchange = async () => {
+    if (!selectedSkill) {
+      alert("Please select a skill to exchange");
+      return;
+    }
+    
+    try {
+      // Add your exchange logic here using the selectedSkill
+      console.log("Exchange initiated for content:", selectedVideo.id, "with skill:", selectedSkill);
+      alert(`Exchange requested with your ${selectedSkill.name} skill!`);
+      
+      // Close both modals
+      setShowExchangeModal(false);
+      setShowModal(false);
+    } catch (error) {
+      console.error("Exchange failed:", error);
+      alert("Exchange failed. Please try again.");
+    }
   };
 
   const handlePlayVideo = (video) => {
@@ -451,6 +496,86 @@ const Explore = () => {
               </div>
             </div>
           )}
+
+          {/* Exchange skil  */}
+          {showExchangeModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-md">
+              <div className="relative bg-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-hidden shadow-2xl">
+                {/* Close Button */}
+                <button 
+                  onClick={() => setShowExchangeModal(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                >
+                  <FiX className="text-xl" />
+                </button>
+                
+                {/* Modal content */}
+                <div className="text-center">
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold mb-2">Exchange Skills</h2>
+                    <p className="text-gray-400">Select a skill to exchange for this content</p>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="flex items-center justify-center gap-3 bg-gray-700 p-3 rounded-lg mb-4">
+                      <img 
+                        src={`https://aqua-raw-mollusk-988.mypinata.cloud/ipfs/${selectedVideo?.thumbHash}`} 
+                        alt={selectedVideo?.title}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                      <div className="text-left">
+                        <h3 className="font-medium text-sm line-clamp-1">{selectedVideo?.title}</h3>
+                        <p className="text-gray-400 text-xs">By {selectedVideo?.channel || "Unknown Creator"}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Skills List */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-3 text-left">Your Skills</h3>
+                    <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 rounded-lg">
+                      {exchangeSkills.map((skill) => (
+                        <div 
+                          key={skill.id}
+                          onClick={() => handleSkillSelection(skill)}
+                          className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors ${
+                            selectedSkill?.id === skill.id 
+                              ? 'bg-blue-600 border-2 border-blue-400' 
+                              : 'bg-gray-700 hover:bg-gray-600'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{skill.name}</span>
+                            <span className="text-xs bg-gray-600 px-2 py-1 rounded-full">
+                              {skill.level}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end gap-2">
+                    <button 
+                      onClick={() => setShowExchangeModal(false)}
+                      className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={confirmExchange}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors flex items-center gap-1"
+                      disabled={!selectedSkill}
+                    >
+                      <CgArrowsExchange className="text-lg" />
+                      Confirm Exchange
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {/* Empty State */}
           {filteredVideos.length === 0 && (

@@ -17,7 +17,7 @@ const Explore = () => {
   const [showResults, setShowResults] = useState(false);
   const [matchResults, setMatchResults] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { contract } = useWallet();
+  const { contract, account} = useWallet();
   const [videos, setVideos] = useState([]);
   const [accessMap, setAccessMap] = useState({});
   
@@ -25,17 +25,20 @@ const Explore = () => {
   const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [exchangeSkills, setExchangeSkills] = useState([]);
   const [selectedSkill, setSelectedSkill] = useState(null);
+  const [selectId,setSelectId] = useState(null)
+  const [excId,setExcId] = useState(null)
+  // const [mySkills,setMySkills] = useState(null);
 
   // sample skills for exchang
-  const sampleSkills = [
-    { id: 1, name: "Web Development", level: "Advanced" },
-    { id: 2, name: "Graphics Design", level: "Intermediate" },
-    { id: 3, name: "Video Editing", level: "Beginner" },
-    { id: 4, name: "Content Writing", level: "Advanced" },
-    { id: 5, name: "Digital Marketing", level: "Intermediate" },
-    { id: 6, name: "UI/UX Design", level: "Advanced" },
-    { id: 7, name: "Data Analysis", level: "Intermediate" },
-  ];
+  // const sampleSkills = [
+  //   { id: 1, name: "Web Development", level: "Advanced" },
+  //   { id: 2, name: "Graphics Design", level: "Intermediate" },
+  //   { id: 3, name: "Video Editing", level: "Beginner" },
+  //   { id: 4, name: "Content Writing", level: "Advanced" },
+  //   { id: 5, name: "Digital Marketing", level: "Intermediate" },
+  //   { id: 6, name: "UI/UX Design", level: "Advanced" },
+  //   { id: 7, name: "Data Analysis", level: "Intermediate" },
+  // ];
 
   useEffect(() => {
     const getVideos = async () => {
@@ -71,10 +74,26 @@ const Explore = () => {
   }, [accessMap]);
 
   // Initialize exchange skills (replace with your actual skills data)
+useEffect(() => {
+  const getMyContent = async () => {
+    if (contract && account && videos.length > 0) {
+      try {
+        // Filter videos where creator is the current account
+        const mySkills = videos.filter(video => 
+          video.creator && video.creator.toLowerCase() === account.toLowerCase()
+        );
+        setExchangeSkills(mySkills);
+      } catch (error) {
+        console.error("Error filtering user content:", error);
+      }
+    }
+  };
+  getMyContent();
+}, [contract, account, videos]); // Add videos as dependency
+
   useEffect(() => {
-    // This would typically come from user profile or database
-    setExchangeSkills(sampleSkills);
-  }, []);
+    console.log("own skills updated:", exchangeSkills);
+  }, [exchangeSkills]);
 
   // Updated categories with proper filtering logic
   const categories = [
@@ -132,6 +151,7 @@ const Explore = () => {
   const handleExchange = async(id) => {
     try {
       // Show the exchange modal instead of immediate action
+      setExcId(id);
       setShowExchangeModal(true);
     } catch (error) {
       console.error("Exchange failed:", error);
@@ -139,8 +159,10 @@ const Explore = () => {
     }
   };
 
-  const handleSkillSelection = (skill) => {
+  const handleSkillSelection = async (skill,id) => {
     setSelectedSkill(skill);
+    setSelectId(id)
+    console.log(excId,":",selectId)
   };
 
   const confirmExchange = async () => {
@@ -151,9 +173,11 @@ const Explore = () => {
     
     try {
       // Add your exchange logic here using the selectedSkill
-      console.log("Exchange initiated for content:", selectedVideo.id, "with skill:", selectedSkill);
-      alert(`Exchange requested with your ${selectedSkill.name} skill!`);
+      // console.log("Exchange initiated for content:", selectedVideo.id, "with skill:", selectedSkill);
+      // alert(`Exchange requested with your ${selectedSkill.name} skill!`);
       
+      const tx =  await contract.contentExchng(excId,selectId)
+      tx.wait();
       // Close both modals
       setShowExchangeModal(false);
       setShowModal(false);
@@ -537,7 +561,7 @@ const Explore = () => {
                       {exchangeSkills.map((skill) => (
                         <div 
                           key={skill.id}
-                          onClick={() => handleSkillSelection(skill)}
+                          onClick={() => handleSkillSelection(skill,skill.id)}
                           className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors ${
                             selectedSkill?.id === skill.id 
                               ? 'bg-blue-600 border-2 border-blue-400' 
@@ -545,9 +569,9 @@ const Explore = () => {
                           }`}
                         >
                           <div className="flex justify-between items-center">
-                            <span className="font-medium">{skill.name}</span>
+                            <span className="font-medium">{skill.title}</span>
                             <span className="text-xs bg-gray-600 px-2 py-1 rounded-full">
-                              {skill.level}
+                              {skill.category}
                             </span>
                           </div>
                         </div>
@@ -563,7 +587,7 @@ const Explore = () => {
                       Cancel
                     </button>
                     <button 
-                      onClick={confirmExchange}
+                      onClick={confirmExchange()}
                       className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors flex items-center gap-1"
                       disabled={!selectedSkill}
                     >

@@ -10,6 +10,10 @@
 # ffmpeg-python==0.2.0
 
 
+# pip install flask && pip install flask-cors && pip install google-generativeai && pip install openai-whisper && pip install requests && pip install pathlib && pip install torch && pip install torchaudio && pip install numpy
+
+
+
 # Gemini API Configuration
 # GEMINI_API_KEY=
 

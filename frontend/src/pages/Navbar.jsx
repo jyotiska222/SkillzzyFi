@@ -263,9 +263,34 @@ const Navbar = () => {
     { id: 3, topic: "Exchange", message: "Bob Johnson purchased your course 'Advanced JavaScript' for 60 points", time: "2 days ago", course: "Advanced JavaScript", buyer: "Bob Johnson", price: "60" },
   ];
 
-  useEffect(() => {
-    setNotifications(mockNotifications);
-  }, []);
+useEffect(() => {
+  const fetchNoties = async () => {
+    if (!contract) return;
+    try {
+      const noties = await contract.getNoties();
+
+      // Convert BigNumber or other types if needed
+      const parsedNoties = noties.map((n, idx) => ({
+        id: idx,
+        topic: n.topic,
+        message: n.message,
+        sender: n.sender,
+        receiver: n.receiver,
+      }));
+
+      setNotifications(parsedNoties);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    }
+  };
+
+  fetchNoties();
+}, [contract]);
+
+  useEffect(()=>{
+     console.log("Notifications: ",notifications)
+  },[notifications])
+
 
   const updateBalance = async () => {
     if (!contract) return;

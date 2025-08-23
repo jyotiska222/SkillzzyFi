@@ -692,11 +692,11 @@ useEffect(() => {
               </div>
 
               {/* Warning Banner */}
-              {matchResults.topicsMissing > 0 && (
+              {/* {matchResults.topicsMissing > 0 && (
                 <div className="bg-yellow-500 bg-opacity-20 border border-yellow-600 text-yellow-500 px-3 py-2 rounded-lg text-sm">
                   ⚠️ Missing Content
                 </div>
-              )}
+              )} */}
 
               {/* Sub-topics Section */}
               {isProcessing ? (

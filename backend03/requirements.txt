@@ -1,0 +1,33 @@
+# flask==2.3.3
+# flask-cors==4.0.0
+# google-generativeai==0.3.2
+# openai-whisper==20231117
+# requests==2.31.0
+# pathlib==1.0.1
+# torch==2.6.0
+# torchaudio==2.6.0
+# numpy==1.24.3
+# ffmpeg-python==0.2.0
+
+
+# Gemini API Configuration
+# GEMINI_API_KEY=
+
+# Flask Configuration (Optional)
+# FLASK_ENV=development
+# FLASK_DEBUG=True
+
+# Server Configuration (Optional)
+# HOST=0.0.0.0
+# PORT=5001
+
+# Whisper Model Configuration (Optional)
+# WHISPER_MODEL=base  # Options: tiny, base, small, medium, large
+
+flask==2.3.3
+flask-cors==4.0.0
+google-generativeai==0.3.2
+requests==2.31.0
+torch==2.6.0
+torchaudio==2.6.0
+numpy==1.26.4

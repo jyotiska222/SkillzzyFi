@@ -1,8 +1,94 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import { IoIosNotifications } from "react-icons/io";
+import { useWallet } from "../contexts/walletContext";
 
 const Noti = ({ showNotifications, toggleNotifications, notifications, setNotifications }) => {
+  const { contract, account } = useWallet();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Function to extract content IDs from exchange notification message
+  const extractExchangeIds = (message) => {
+    // Message format: "0x...wants to exchange: [Title1] with [Title2]"
+    try {
+      // Extract the sender address (first 42 characters)
+      const senderAddress = message.substring(0, 42);
+      
+      // Find the content titles
+      const wantsIndex = message.indexOf("wants to exchange: ");
+      if (wantsIndex === -1) return null;
+      
+      const withIndex = message.indexOf(" with ");
+      if (withIndex === -1) return null;
+      
+      const title1 = message.substring(wantsIndex + 19, withIndex);
+      const title2 = message.substring(withIndex + 6);
+      
+      return { senderAddress, title1, title2 };
+    } catch (error) {
+      console.error("Error parsing exchange message:", error);
+      return null;
+    }
+  };
+
+  // Function to find content ID by title
+  const findContentIdByTitle = async (title) => {
+    try {
+      const allContents = await contract.getAllContents();
+      for (let i = 0; i < allContents.length; i++) {
+        if (allContents[i].title === title) {
+          return i;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error("Error finding content by title:", error);
+      return null;
+    }
+  };
+
+  // Confirm exchange function
+  const confirmExchange = async (notification) => {
+    if (!contract || !account) return;
+    
+    setIsProcessing(true);
+    try {
+      // Extract information from the notification
+      const exchangeData = extractExchangeIds(notification.message);
+      if (!exchangeData) {
+        alert("Could not parse exchange request");
+        return;
+      }
+      
+      // Find the content IDs
+      const c1Id = await findContentIdByTitle(exchangeData.title1);
+      const c2Id = await findContentIdByTitle(exchangeData.title2);
+      
+      if (c1Id === null || c2Id === null) {
+        alert("Could not find the content for exchange");
+        return;
+      }
+      
+      // Convert address string to proper address format
+      const senderAddress = exchangeData.senderAddress;
+      console.log(c1Id,":",c2Id)
+      
+      // Call the confirm exchange function in the contract
+      const tx = await contract.confirmExcng(c2Id, c1Id, senderAddress);
+      await tx.wait();
+      
+      alert("Exchange confirmed successfully!");
+      
+      // Remove the notification
+      clearNotification(notification.id);
+    } catch (error) {
+      console.error("Error confirming exchange:", error);
+      alert("Failed to confirm exchange: " + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const clearNotification = (id) => {
     setNotifications(notifications.filter(notification => notification.id !== id));
   };
@@ -59,12 +145,14 @@ const Noti = ({ showNotifications, toggleNotifications, notifications, setNotifi
                   <span className="text-xs text-gray-500">{notification.time}</span>
                   {notification.topic === "Exchange" ? (
                     <div className="flex items-center space-x-2">
-                      <button className="bg-green-500 hover:bg-green-600 px-2 py-1 text-white cursor-pointer rounded-2xl">
-                        Accept
+                      <button 
+                        onClick={() => confirmExchange(notification)} 
+                        className="bg-green-500 hover:bg-green-600 px-2 py-1 text-white cursor-pointer rounded-2xl"
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? "Processing..." : "Accept"}
                       </button>
-                      <button className="bg-red-600 hover:bg-red-700 px-2 py-1 text-white cursor-pointer rounded-2xl">
-                        Reject
-                      </button>
+                      <button className="bg-red-600 hover:bg-red-700 px-2 py-1 text-white cursor-pointer rounded-2xl">Reject</button>
                     </div>
                   ) : (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">

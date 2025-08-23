@@ -1,43 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ArrowUp, MessageCircle, Users, Send } from "lucide-react";
+import { useWallet } from "../contexts/walletContext";
 
-const Forum = ({ currentUser = "User123" }) => {
+const toNum = (v) => {
+  if (typeof v === "bigint") return Number(v);
+  if (v && typeof v.toNumber === "function") return v.toNumber();
+  return Number(v); // fallback (covers plain numbers / strings)
+};
+
+const Forum = () => {
   const [posts, setPosts] = useState([]);
   const [needTitle, setNeedTitle] = useState("");
   const [needDescription, setNeedDescription] = useState("");
   const [selectedPost, setSelectedPost] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const { contract, account } = useWallet();
 
-  const handleAddPost = () => {
-    if (!needTitle.trim() || !needDescription.trim()) return;
-    const post = {
-      id: Date.now(),
-      author: currentUser || "Anonymous", // later replace with wallet address
-      title: needTitle,
-      description: needDescription,
-      votes: 0,
-      date: new Date().toLocaleString(),
-    };
-    setPosts([post, ...posts]);
-    setNeedTitle("");
-    setNeedDescription("");
+  const parsePosts = useCallback((raw) => {
+    // Contract returns DContent: { id, title, description, upvotes }
+    return raw.map((p) => ({
+      id: toNum(p.id),
+      title: p.title,
+      description: p.description,
+      upvotes: toNum(p.upvotes),
+    }));
+  }, []);
+
+  const loadPosts = useCallback(async () => {
+    if (!contract) return;
+    try {
+      setLoading(true);
+      const raw = await contract.getDContents();
+      const sorted = [...raw].sort((a, b) => Number(b.upvotes) - Number(a.upvotes));
+      const parsed = parsePosts(sorted);
+      setPosts(parsed);
+      // Keep selection valid
+      if (parsed.length === 0) setSelectedPost(null);
+      else if (selectedPost) {
+        const updated = parsed.find((x) => x.id === selectedPost.id);
+        setSelectedPost(updated || parsed[0]);
+      }
+    } catch (err) {
+      console.error("Error loading posts:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [contract, parsePosts, selectedPost]);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
+
+  const handleAddPost = async () => {
+    if (!needTitle.trim() || !needDescription.trim() || !contract) return;
+    try {
+      const tx = await contract.uploadDContent(needTitle, needDescription);
+      await tx.wait();
+      setNeedTitle("");
+      setNeedDescription("");
+      await loadPosts();
+    } catch (err) {
+      console.error("Upload error:", err);
+    }
   };
 
-  const handleUpvote = (id) => {
-    setPosts((prevPosts) =>
-      prevPosts
-        .map((p) => {
-          if (p.id === id) {
-            if (p.author === currentUser) {
-              console.log("Cannot vote on your own post!");
-              return p;
-            }
-            return { ...p, votes: p.votes + 1 };
-          }
-          return p;
-        })
-        .sort((a, b) => b.votes - a.votes)
-    );
+  const handleUpvote = async (id) => {
+    if (!contract) return;
+    try {
+      const tx = await contract.upvote(id);
+      await tx.wait();
+      await loadPosts();
+    } catch (err) {
+      console.error("Upvote error:", err);
+      // The contract guards multiple votes; surface friendly info if needed
+      // e.g., toast("Already upvoted this post")
+    }
   };
 
   return (
@@ -62,7 +100,9 @@ const Forum = ({ currentUser = "User123" }) => {
             <div className="w-3 h-3 bg-emerald-400 rounded-full"></div>
             <Users className="w-4 h-4 text-gray-400" />
             <span className="text-gray-300">Logged in as</span>
-            <span className="font-semibold text-emerald-400">{currentUser}</span>
+            <span className="font-semibold text-emerald-400">
+              {account || "Anonymous"}
+            </span>
           </div>
         </motion.div>
 
@@ -74,12 +114,11 @@ const Forum = ({ currentUser = "User123" }) => {
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <div className="max-w-2xl mx-auto">
-            <div className="bg-gradient-to-b from-gray-800 to-gray-900 border border-emerald-500/20 hover:border-emerald-400/40 rounded-2xl p-6 shadow-xl transition-all">
+            <div className="bg-gradient-to-b from-gray-800 to-gray-900 border border-emerald-500/20 rounded-2xl p-6 shadow-xl">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Post Your Need
               </h3>
 
-              {/* Title Input */}
               <input
                 type="text"
                 value={needTitle}
@@ -88,18 +127,18 @@ const Forum = ({ currentUser = "User123" }) => {
                 className="w-full mb-4 bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               />
 
-              {/* Description Input */}
               <div className="relative">
                 <textarea
                   value={needDescription}
                   onChange={(e) => setNeedDescription(e.target.value)}
                   placeholder="Describe your need in detail..."
                   className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none h-28 transition-all"
-                  onKeyPress={(e) =>
-                    e.key === "Enter" &&
-                    !e.shiftKey &&
-                    (e.preventDefault(), handleAddPost())
-                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleAddPost();
+                    }
+                  }}
                 />
                 <button
                   onClick={handleAddPost}
@@ -121,77 +160,56 @@ const Forum = ({ currentUser = "User123" }) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            {posts.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-16 bg-gradient-to-b from-gray-800 to-gray-900 border border-gray-700 rounded-2xl">
+                <p className="text-gray-300 text-lg">Loading posts…</p>
+              </div>
+            ) : posts.length === 0 ? (
               <div className="text-center py-16 bg-gradient-to-b from-gray-800 to-gray-900 border border-gray-700 rounded-2xl">
                 <MessageCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-300 text-lg">No posts yet. Be the first to share!</p>
+                <p className="text-gray-300 text-lg">
+                  No posts yet. Be the first to share!
+                </p>
               </div>
             ) : (
-              posts.map((post, index) => {
-                const isOwnPost = post.author === currentUser;
-
-                return (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02 }}
-                    className={`bg-gradient-to-b from-gray-800 to-gray-900 border rounded-2xl p-6 cursor-pointer transition-all shadow-xl ${
-                      isOwnPost
-                        ? "border-emerald-500/40 hover:border-emerald-400/60"
-                        : "border-gray-700 hover:border-gray-600"
-                    } ${selectedPost?.id === post.id ? "ring-2 ring-emerald-500/50" : ""}`}
-                    onClick={() => setSelectedPost(post)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            {post.author[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-white">{post.author}</p>
-                            <p className="text-xs text-gray-400">{post.date}</p>
-                          </div>
-                          {isOwnPost && (
-                            <div className="bg-emerald-400 text-black text-xs px-3 py-1 rounded-full font-medium">
-                              Your Post
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Title + Description */}
-                        <p className="text-lg font-semibold text-emerald-400 mb-1">
-                          {post.title}
-                        </p>
-                        <p className="text-gray-300 leading-relaxed">{post.description}</p>
-                      </div>
-
-                      {/* Upvotes */}
-                      <div className="flex flex-col items-center ml-6">
-                        <motion.button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUpvote(post.id);
-                          }}
-                          disabled={isOwnPost}
-                          className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 ${
-                            isOwnPost
-                              ? "text-gray-600 cursor-not-allowed"
-                              : "text-gray-400 hover:text-emerald-400 hover:bg-gray-700/50"
-                          }`}
-                          whileHover={!isOwnPost ? { scale: 1.1 } : {}}
-                          whileTap={!isOwnPost ? { scale: 0.95 } : {}}
-                        >
-                          <ArrowUp className="w-6 h-6" />
-                          <span className="font-bold text-lg">{post.votes}</span>
-                        </motion.button>
-                      </div>
+              posts.map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.05 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-gradient-to-b from-gray-800 to-gray-900 border border-gray-700 hover:border-gray-600 rounded-2xl p-6 cursor-pointer transition-all shadow-xl"
+                  onClick={() => setSelectedPost(post)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold text-emerald-400 mb-1">
+                        {post.title}
+                      </p>
+                      <p className="text-gray-300 leading-relaxed">
+                        {post.description}
+                      </p>
                     </div>
-                  </motion.div>
-                );
-              })
+
+                    {/* Upvotes */}
+                    <div className="flex flex-col items-center ml-6">
+                      <motion.button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUpvote(post.id);
+                        }}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-gray-400 hover:text-emerald-400 hover:bg-gray-700/50 transition-all duration-200"
+                        whileHover={{ scale: 1.06 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <ArrowUp className="w-6 h-6" />
+                        <span className="font-bold text-lg">{post.upvotes}</span>
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
             )}
           </motion.div>
 
@@ -203,46 +221,40 @@ const Forum = ({ currentUser = "User123" }) => {
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <div className="sticky top-6">
-              <div className="bg-gradient-to-b from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
+              <div className="bg-gradient-to-b from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl min-h-[220px]">
                 {selectedPost ? (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold">
-                        {selectedPost.author[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-white">Post Details</h3>
-                        <p className="text-gray-400 text-sm">Selected post information</p>
-                      </div>
-                    </div>
-
+                    <h3 className="text-xl font-bold text-white mb-4">Post Details</h3>
                     <div className="space-y-4">
                       <div className="p-4 bg-gray-900 rounded-xl border border-gray-700">
-                        <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Need</span>
+                        <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+                          Need
+                        </span>
                         <p className="text-white mt-1 font-medium">{selectedPost.title}</p>
                       </div>
 
                       <div className="p-4 bg-gray-900 rounded-xl border border-gray-700">
-                        <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Description</span>
-                        <p className="text-gray-300 mt-2 leading-relaxed">{selectedPost.description}</p>
+                        <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+                          Description
+                        </span>
+                        <p className="text-gray-300 mt-2 leading-relaxed">
+                          {selectedPost.description}
+                        </p>
                       </div>
 
                       <div className="flex gap-4">
                         <div className="flex-1 p-4 bg-gray-900 rounded-xl border border-gray-700 text-center">
-                          <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider block">Votes</span>
-                          <p className="text-2xl font-bold text-white mt-1">{selectedPost.votes}</p>
+                          <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider block">
+                            Upvotes
+                          </span>
+                          <p className="text-2xl font-bold text-white mt-1">{selectedPost.upvotes}</p>
                         </div>
                         <div className="flex-1 p-4 bg-gray-900 rounded-xl border border-gray-700 text-center">
-                          <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider block">Rank</span>
-                          <p className="text-2xl font-bold text-white mt-1">
-                            #{posts.findIndex((p) => p.id === selectedPost.id) + 1}
-                          </p>
+                          <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider block">
+                            ID
+                          </span>
+                          <p className="text-2xl font-bold text-white mt-1">#{selectedPost.id}</p>
                         </div>
-                      </div>
-
-                      <div className="p-4 bg-gray-900 rounded-xl border border-gray-700">
-                        <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Posted</span>
-                        <p className="text-gray-400 mt-1 text-sm">{selectedPost.date}</p>
                       </div>
                     </div>
                   </motion.div>

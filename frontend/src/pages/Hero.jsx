@@ -6,69 +6,7 @@ import { EffectComposer, Glitch, Bloom } from "@react-three/postprocessing";
 import { FaArrowRight, FaCode, FaPaintBrush, FaMusic } from "react-icons/fa";
 
 // 3D Skill Icons Component
-// const SkillIcons = () => {
-//   return (
-//     <Canvas camera={{ position: [0, 0, 10], fov: 45 }}>
-//       <ambientLight intensity={0.3} />
-//       <pointLight position={[10, 10, 10]} intensity={2} />
-//       <Environment preset="city" />
 
-//       {/* Neon Box */}
-//       <Float speed={2} rotationIntensity={1} floatIntensity={2}>
-//         <mesh position={[-2, 1, 0]}>
-//           <boxGeometry args={[1, 1, 1]} />
-//           <meshStandardMaterial
-//             color="#00df9a"
-//             emissive="#00df9a"
-//             emissiveIntensity={1}
-//             roughness={0.2}
-//             metalness={0.8}
-//           />
-//         </mesh>
-//       </Float>
-
-//       {/* Neon Sphere */}
-//       <Float speed={3} rotationIntensity={2} floatIntensity={1}>
-//         <mesh position={[2, -1, 0]}>
-//           <sphereGeometry args={[0.9, 32, 32]} />
-//           <meshStandardMaterial
-//             color="#6366f1"
-//             emissive="#6366f1"
-//             emissiveIntensity={1}
-//             roughness={0.1}
-//             metalness={1}
-//           />
-//         </mesh>
-//       </Float>
-
-//       {/* Neon Torus */}
-//       <Float speed={1.5} rotationIntensity={1.5} floatIntensity={2}>
-//         <mesh position={[0, 0, 0]}>
-//           <torusGeometry args={[0.6, 0.2, 16, 32]} />
-//           <meshStandardMaterial
-//             color="#f59e0b"
-//             emissive="#f59e0b"
-//             emissiveIntensity={1}
-//             roughness={0.2}
-//             metalness={0.7}
-//           />
-//         </mesh>
-//       </Float>
-
-//       <EffectComposer>
-//         <Bloom luminanceThreshold={0} luminanceSmoothing={0.9} height={300} />
-//         <Glitch
-//           delay={[1.5, 3.5]}
-//           duration={[0.6, 1.0]}
-//           strength={[0.1, 0.2]}
-//           mode="sporadic"
-//           active
-//         />
-//       </EffectComposer>
-//       <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
-//     </Canvas>
-//   );
-// };
 
 const Hero = () => {
   return (

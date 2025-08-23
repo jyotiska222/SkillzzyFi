@@ -311,7 +311,7 @@ const Navbar = () => {
           bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-500 
           bg-clip-text text-transparent 
           transition-transform duration-300 hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">
-          Skillzzy<span className="text-yellow-400 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]">Fi</span>
+          <Link to="/">Skillzzy<span className="text-yellow-400 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]">Fi</span></Link>
         </div>
 
         {/* Desktop Menu */}

@@ -8,7 +8,7 @@ import { Loader } from 'lucide-react';
 import { Coins } from 'lucide-react';
 
 const Explore = () => {
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('General');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -18,59 +18,64 @@ const Explore = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { contract } = useWallet();
   const [videos, setVideos] = useState([]);
-  const [accessMap,setAccessMap] = useState({})
-
+  const [accessMap, setAccessMap] = useState({});
 
   useEffect(() => {
-  const getVideos = async () => {
-    if (contract) {
-      try {
-        const newVideos = await contract.getAllContents();
-        setVideos(newVideos);
+    const getVideos = async () => {
+      if (contract) {
+        try {
+          const newVideos = await contract.getAllContents();
+          setVideos(newVideos);
 
-        const accessData = {};
-        for (let i = 0; i < newVideos.length; i++) {
-          try {
-            const hasAccess = await contract.hasAccess(i);
-            accessData[i] = hasAccess;
-          } catch (error) {
-            console.error(`Error checking access for content ${i}:`, error);
-            accessData[i] = false;
+          const accessData = {};
+          for (let i = 0; i < newVideos.length; i++) {
+            try {
+              const hasAccess = await contract.hasAccess(i);
+              accessData[i] = hasAccess;
+            } catch (error) {
+              console.error(`Error checking access for content ${i}:`, error);
+              accessData[i] = false;
+            }
           }
+
+          setAccessMap(accessData);
+          console.log("calculated accessData:", accessData);
+        } catch (error) {
+          console.error("Error fetching videos:", error);
         }
-
-        setAccessMap(accessData);
-        console.log("calculated accessData:", accessData);
-      } catch (error) {
-        console.error("Error fetching videos:", error);
       }
-    }
-  };
+    };
 
-  getVideos();
-}, [contract]);
+    getVideos();
+  }, [contract]);
 
-useEffect(() => {
-  console.log("accessMap updated:", accessMap);
-}, [accessMap]);
+  useEffect(() => {
+    console.log("accessMap updated:", accessMap);
+  }, [accessMap]);
 
-
+  // Updated categories with proper filtering logic
   const categories = [
-    { id: 'all', name: 'All', icon: <FiTrendingUp /> },
-    { id: 'technology', name: 'Technology', icon: <FiTrendingUp /> },
-    { id: 'design', name: 'Design', icon: <FiTrendingUp /> },
-    { id: 'gaming', name: 'Gaming', icon: <FiTrendingUp /> },
-    { id: 'music', name: 'Music', icon: <FiTrendingUp /> },
-    { id: 'travel', name: 'Travel', icon: <FiTrendingUp /> },
-    { id: 'health', name: 'Health', icon: <FiTrendingUp /> },
-    { id: 'photography', name: 'Photography', icon: <FiTrendingUp /> }
+    { id: 'General', name: 'General', icon: <FiTrendingUp /> },
+    { id: 'Education', name: 'Education', icon: <FiTrendingUp /> },
+    { id: 'Entertainment', name: 'Entertainment', icon: <FiTrendingUp /> },
+    { id: 'Gaming', name: 'Gaming', icon: <FiTrendingUp /> },
+    { id: 'Music', name: 'Music', icon: <FiTrendingUp /> },
+    { id: 'Technology', name: 'Technology', icon: <FiTrendingUp /> }
   ];
 
+  // Fixed filtering logic
   const filteredVideos = videos.filter(video => {
-    const matchesCategory = activeFilter === 'all' || video.category === activeFilter;
-    const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         video.channel.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    // Category filtering - General shows all videos
+    const matchesCategory = activeFilter === 'General' || video.category === activeFilter;
+    
+    // Search filtering - check title, channel, and category
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = searchQuery === '' || 
+                         video.title?.toLowerCase().includes(searchLower) || 
+                         video.channel?.toLowerCase().includes(searchLower) ||
+                         video.category?.toLowerCase().includes(searchLower);
+    
+    return matchesCategory && matchesSearch;
   });
 
   const handleVideoClick = (video) => {
@@ -86,14 +91,16 @@ useEffect(() => {
   };
 
   const handleBuyNow = async(id) => {
-    // console.log("Buy now clicked for:", selectedVideo);
-    // alert("Purchase functionality would be implemented here");
     try {
-      const tx = await contract.purchaseContent(id)
-      tx.wait();
-      console.alert("Purchased successfully , you may have to refresh your page")
+      const tx = await contract.purchaseContent(id);
+      await tx.wait();
+      alert("Purchased successfully, you may have to refresh your page");
+      // Refresh access map after purchase
+      const hasAccess = await contract.hasAccess(id);
+      setAccessMap(prev => ({...prev, [id]: hasAccess}));
     } catch (error) {
-      
+      console.error("Purchase failed:", error);
+      alert("Purchase failed. Please try again.");
     }
     setShowModal(false);
   };
@@ -152,7 +159,7 @@ useEffect(() => {
       alert("Please enter at least one topic to match");
       return;
     }
-
+    
     setIsProcessing(true);
     setShowResults(true);
     
@@ -209,7 +216,7 @@ useEffect(() => {
   };
 
   return (
-    <div className=" min-h-screen bg-gray-900 text-gray-100 p-6">
+    <div className="min-h-screen bg-gray-900 text-gray-100 p-6">
       <div className="pr-96">
         <div className="w-full">
           {/* Header */}
@@ -228,17 +235,27 @@ useEffect(() => {
               </div>
               <input
                 type="text"
-                placeholder="Search videos, channels..."
+                placeholder="Search videos, channels, categories..."
                 className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
+              {/* Clear search button */}
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-sm"
+                >
+                  <FiX />
+                  <span>Clear</span>
+                </button>
+              )}
+              <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg">
                 <FiFilter />
-                <span>Filters</span>
-              </button>
+                <span className="text-sm">Filters Active: {activeFilter}</span>
+              </div>
             </div>
           </div>
 
@@ -260,11 +277,21 @@ useEffect(() => {
             ))}
           </div>
 
+          {/* Results counter */}
+          <div className="mb-4">
+            <p className="text-gray-400 text-sm">
+              {searchQuery || activeFilter !== 'General' 
+                ? `Showing ${filteredVideos.length} result${filteredVideos.length !== 1 ? 's' : ''} ${searchQuery ? `for "${searchQuery}"` : ''} ${activeFilter !== 'General' ? `in ${activeFilter}` : ''}`
+                : `${filteredVideos.length} videos available`
+              }
+            </p>
+          </div>
+
           {/* Video Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredVideos.map(video => (
+            {filteredVideos.map((video, index) => (
               <div 
-                key={video.id} 
+                key={video.id || index} 
                 className="group relative bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer"
                 onClick={() => handleVideoClick(video)}
               >
@@ -275,7 +302,11 @@ useEffect(() => {
                     alt={video.title}
                     className="w-full h-48 object-cover"
                   />
-                  {/* Duration Badge - Now shows actual video duration */}
+                  {/* Category Badge */}
+                  <div className="absolute top-2 left-2 bg-blue-600 bg-opacity-90 px-2 py-1 rounded text-xs font-medium">
+                    {video.category || 'General'}
+                  </div>
+                  {/* Duration Badge */}
                   <div className="absolute bottom-2 right-2 bg-black bg-opacity-80 px-2 py-1 rounded text-sm font-medium">
                     {formatVideoDuration(video.duration)}
                   </div>
@@ -296,7 +327,7 @@ useEffect(() => {
                     />
                     <div className="flex-1">
                       <h3 className="font-medium line-clamp-2">{video.title}</h3>
-                      <p className="text-gray-400 text-sm mt-1">{"CodeMaster"}</p>
+                      <p className="text-gray-400 text-sm mt-1">{video.channel || "CodeMaster"}</p>
                       <div className="flex items-center text-gray-400 text-xs mt-1">
                         <FiClock className="mr-1" />
                         <span>{formatVideoDuration(video.duration)}</span>
@@ -356,42 +387,52 @@ useEffect(() => {
                   
                   <div className="flex justify-end gap-2">
                     <button 
-                      onClick={handleOpenVideo}
+                      onClick={() => {
+                        if (accessMap[selectedVideo.id]) {
+                          handleOpenVideo();
+                        } else {
+                          alert(`This video costs ${selectedVideo?.currentPrice || 10} points`);
+                        }
+                      }}
                       className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                     >
                       <i className="ri-play-fill text-lg"></i>
-                      <Coins className="h-4 w-4 text-Red-600" />
+                      <Coins className="h-4 w-4" />
                       {selectedVideo?.currentPrice || 10}
                     </button>
-                    {accessMap[selectedVideo.id]?<button 
-                      onClick={handleOpenVideo}
-                      className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
-                    >
-                      <i className="ri-play-fill text-lg"></i>
-                      Open Video
-                    </button>:
-                    <>
-                    <button 
-                      onClick={(e)=>handleBuyNow(selectedVideo.id)}
-                      className="flex items-center justify-center gap-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
-                    >
-                      <i className="ri-heart-line text-lg"></i>
-                      Buy Now
-                    </button>
-                    
-                    <div className="relative group">
+                    {accessMap[selectedVideo.id] ? (
                       <button 
-                        onClick={handleBuyNow}
-                        className="flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
+                        onClick={handleOpenVideo}
+                        className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                       >
-                        <i className="ri-exchange-line text-lg"></i>
-                        Exchange
+                        <i className="ri-play-fill text-lg"></i>
+                        Open Video
                       </button>
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block w-48 bg-white text-black text-xs rounded-md py-2 px-3 shadow-lg z-10">
-                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 w-3 h-3 rotate-45 bg-white"></div>
-                        Exchange your skill with anyone
-                      </div>
-                    </div></>}
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => handleBuyNow(selectedVideo.id)}
+                          className="flex items-center justify-center gap-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
+                        >
+                          <i className="ri-heart-line text-lg"></i>
+                          Buy Now
+                        </button>
+                        
+                        <div className="relative group">
+                          <button 
+                            onClick={() => handleBuyNow(selectedVideo.id)}
+                            className="flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
+                          >
+                            <i className="ri-exchange-line text-lg"></i>
+                            Exchange
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block w-48 bg-white text-black text-xs rounded-md py-2 px-3 shadow-lg z-10">
+                            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 w-3 h-3 rotate-45 bg-white"></div>
+                            Exchange your skill with anyone
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -406,8 +447,22 @@ useEffect(() => {
               </div>
               <h3 className="text-xl font-medium mb-2">No videos found</h3>
               <p className="text-gray-400 max-w-md">
-                Try adjusting your search or filter to find what you're looking for.
+                {searchQuery 
+                  ? `No results found for "${searchQuery}". Try different keywords or categories.`
+                  : `No videos found in ${activeFilter}. Try selecting a different category.`
+                }
               </p>
+              {(searchQuery || activeFilter !== 'General') && (
+                <button 
+                  onClick={() => {
+                    setSearchQuery('');
+                    setActiveFilter('General');
+                  }}
+                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  Show All Videos
+                </button>
+              )}
             </div>
           )}
         </div>

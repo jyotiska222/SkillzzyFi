@@ -1,6 +1,7 @@
 
 // explore page
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiFilter, FiClock, FiTrendingUp, FiHeart, FiShare2, FiMoreVertical, FiX, FiLoader } from 'react-icons/fi';
 import { BsPlayFill, BsDot } from 'react-icons/bs';
 import { useWallet } from '../contexts/walletContext';
@@ -128,7 +129,7 @@ useEffect(() => {
 
   const handleOpenVideo = () => {
     if (selectedVideo) {
-      window.open(`https://aqua-raw-mollusk-988.mypinata.cloud/ipfs/${selectedVideo.ipfsHash}`, "_blank");
+      navigate('/course-video', { state: { videoData: selectedVideo } });
       setShowModal(false);
     }
   };
@@ -187,8 +188,28 @@ useEffect(() => {
     }
   };
 
+  const navigate = useNavigate();
+
   const handlePlayVideo = (video) => {
-    window.open(`https://aqua-raw-mollusk-988.mypinata.cloud/ipfs/${video.ipfsHash}`, "_blank");
+    console.log("handlePlayVideo called with:", video);
+    
+    // First check if video exists
+    if (!video) {
+      console.error("No video provided");
+      alert("Unable to play video. Please try again.");
+      return;
+    }
+
+    // Check if we have a numeric ID
+    const videoId = parseInt(video.id);
+    if (isNaN(videoId)) {
+      console.error("Invalid video ID:", video.id);
+      alert("Invalid video ID. Please try again.");
+      return;
+    }
+
+    console.log("Navigating to video ID:", videoId);
+    navigate(`/course-video/${videoId}`);
   };
 
   const resetAnalysis = () => {
@@ -470,11 +491,12 @@ useEffect(() => {
                   <div className="flex justify-end gap-2">
                     <button 
                       onClick={() => {
-                        if (accessMap[selectedVideo.id]) {
-                          handleOpenVideo();
-                        } else {
-                          alert(`This video costs ${selectedVideo?.currentPrice || 10} points`);
-                        }
+                        // Always allow video playback for now, comment out access check temporarily
+                        // if (accessMap[selectedVideo?.id]) {
+                          handlePlayVideo(selectedVideo);
+                        // } else {
+                        //   alert(`This video costs ${selectedVideo?.currentPrice || 10} points`);
+                        // }
                       }}
                       className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                     >
@@ -482,9 +504,12 @@ useEffect(() => {
                       <Coins className="h-4 w-4" />
                       {selectedVideo?.currentPrice || 10}
                     </button>
-                    {accessMap[selectedVideo.id] ? (
+                    {true ? ( // Changed from accessMap check to always allow for debugging
                       <button 
-                        onClick={handleOpenVideo}
+                        onClick={() => {
+                          console.log("Opening video:", selectedVideo);
+                          handlePlayVideo(selectedVideo);
+                        }}
                         className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                       >
                         <i className="ri-play-fill text-lg"></i>

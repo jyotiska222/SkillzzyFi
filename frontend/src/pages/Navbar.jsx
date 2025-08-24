@@ -330,7 +330,7 @@ useEffect(() => {
 
   return (
     <>
-      <nav className="bg-gradient-to-r from-blue-800 via-indigo-900 to-purple-800 shadow-lg px-6 py-4 flex justify-between items-center relative z-50">
+      <nav className="sticky top-0  z-50  min-w-full  bg-gradient-to-r from-blue-800 via-indigo-900 to-purple-800 shadow-lg px-6 py-4 flex justify-between items-center ">
         {/* Logo */}
         <div className="flex items-center space-x-2 cursor-pointer 
           transition-transform duration-300 hover:scale-110">

@@ -482,7 +482,7 @@ const Explore = () => {
 
         {/* TOPIC INPUT SECTION WITH RESULT SHOWCASING */}
         {/* Topic Input Section */}
-        <div className="fixed top-6 right-6 bottom-6 w-80 bg-gray-800 p-6 rounded-xl transition-all duration-300 overflow-y-auto">
+        <div className="fixed  top-12 right-6 bottom-4 w-82 bg-gray-800 p-6 rounded-xl transition-all duration-300 overflow-y-auto">
           <h3 className="text-xl font-semibold mb-4 sticky top-0 bg-gray-800 py-2">
             {!showResults ? 'Match Content' : 'Analysis Results'}
           </h3>
@@ -560,7 +560,7 @@ const Explore = () => {
                 <>
                   <div className="bg-gray-700 p-4 rounded-lg">
                     <h4 className="font-semibold mb-3 text-sm">📝 Detailed Analysis</h4>
-                    <div className="space-y-3 text-sm max-h-60 overflow-y-auto">
+                    <div className="space-y-3 text-sm overflow-y-auto max-h-[70vh]">
                       {matchResults.details?.map((detail, index) => (
                         <div key={index} className="border-l-2 border-gray-600 pl-3">
                           <div className={`flex items-center gap-2 mb-1 ${

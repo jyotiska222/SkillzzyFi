@@ -156,7 +156,7 @@ useEffect(() => {
       setShowExchangeModal(true);
     } catch (error) {
       console.error("Exchange failed:", error);
-      alert("Exchange failed. Please try again.");
+      // alert("Exchange failed. Please try again.");
     }
   };
 
@@ -504,7 +504,7 @@ useEffect(() => {
                       <Coins className="h-4 w-4" />
                       {selectedVideo?.currentPrice || 10}
                     </button>
-                    {true ? ( // Changed from accessMap check to always allow for debugging
+                    {accessMap[selectedVideo.id] ? ( // Changed from accessMap check to always allow for debugging
                       <button 
                         onClick={() => {
                           console.log("Opening video:", selectedVideo);
@@ -518,7 +518,7 @@ useEffect(() => {
                     ) : (
                       <>
                         <button 
-                          onClick={() => handleBuyNow(selectedVideo.id)}
+                          onClick={() => {handleBuyNow(selectedVideo.id)}}
                           className="flex items-center justify-center gap-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                         >
                           <i className="ri-heart-line text-lg"></i>
@@ -527,7 +527,7 @@ useEffect(() => {
                         
                         <div className="relative group">
                           <button 
-                            onClick={() => handleExchange(selectedVideo.id)}
+                            onClick={() => {handleExchange(selectedVideo.id)}}
                             className="flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-[20px] transition-colors font-medium text-sm"
                           >
                             <CgArrowsExchange className="text-lg" />
